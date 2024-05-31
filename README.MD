@@ -14,13 +14,13 @@ Certifique-se de ter as seguintes dependências instaladas em sua máquina:
 1. Clone este repositório:
 
     ```sh
-    git clone https://github.com/seu-usuario/nome-do-repositorio.git
+    git clone https://github.com/marmotitude/s3-template.git
     ```
 
 2. Navegue até o diretório do projeto:
 
     ```sh
-    cd s3-templates
+    cd s3-template
     ```
 
 3. Instale as dependências:
