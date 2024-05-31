@@ -1,0 +1,13 @@
+remotes:
+  example:
+    endpoint: https://s3.us-east-1.amazonaws.com
+    region: us-east-1
+    access_key: "xxxx"
+    secret_key: "2xxx"
+    host: "path"
+  example-second:
+    endpoint: https://s3.us-east-1.amazonaws.com
+    region: us-east-1
+    access_key: "xxxx"
+    secret_key: "2xxx"
+    host: "virtual"
