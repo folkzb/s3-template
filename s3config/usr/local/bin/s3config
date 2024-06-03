@@ -1,0 +1,268 @@
+#!/bin/bash
+
+CONFIG_DIR="$HOME/.config/s3config"
+CONFIG_FILE="$CONFIG_DIR/config.yaml"
+
+# Function to create paths if not exists
+create_paths() {
+    mkdir -p "$1"
+}
+
+# Function to write aws config and credentials
+write_aws_config() {
+    local config="$1"
+    mkdir -p ~/.aws
+    # Start files
+    > ~/.aws/config
+    > ~/.aws/credentials
+
+    # Iterate over each remote
+    echo "$config" | yq eval '.remotes | keys' - | while IFS= read -r remote; do
+        if [ -n "$remote" ]; then
+            remote=$(echo "$remote" | sed 's/^- //')  # Remove prefix from list
+            access_key=$(echo "$config" | yq eval ".remotes.\"$remote\".access_key" -)
+            secret_key=$(echo "$config" | yq eval ".remotes.\"$remote\".secret_key" -)
+            region=$(echo "$config" | yq eval ".remotes.\"$remote\".region" -)
+            endpoint=$(echo "$config" | yq eval ".remotes.\"$remote\".endpoint" -)
+            host=$(echo "$config" | yq eval ".remotes.\"$remote\".host" -)
+
+            # Write config
+            {
+                echo "[profile $remote]"
+                echo "endpoint_url = $endpoint"
+                echo "region = ${region:-us-east-1}"
+                echo "s3 ="
+                echo "    addressing_style = ${host:-path}"
+                echo
+            } >> ~/.aws/config
+
+            # Write credentials
+            {
+                echo "[$remote]"
+                echo "aws_access_key_id = $access_key"
+                echo "aws_secret_access_key = $secret_key"
+                echo
+            } >> ~/.aws/credentials
+        fi
+    done
+    echo 'write aws config e credentials'
+}
+
+# Function to write rclone config
+write_rclone_config() {
+    local config="$1"
+    mkdir -p ~/.config/rclone
+    # Start file
+    > ~/.config/rclone/rclone.conf
+
+    # Iterate over each remote
+    echo "$config" | yq eval '.remotes | keys' - | while IFS= read -r remote; do
+        if [ -n "$remote" ]; then
+            remote=$(echo "$remote" | sed 's/^- //')  # Remover prefixo de lista
+            access_key=$(echo "$config" | yq eval ".remotes.\"$remote\".access_key" -)
+            secret_key=$(echo "$config" | yq eval ".remotes.\"$remote\".secret_key" -)
+            region=$(echo "$config" | yq eval ".remotes.\"$remote\".region" -)
+            endpoint=$(echo "$config" | yq eval ".remotes.\"$remote\".endpoint" -)
+
+            # Write rclone.conf
+            {
+                echo "[$remote]"
+                echo "type = s3"
+                echo "provider = Other"
+                echo "access_key_id = $access_key"
+                echo "secret_access_key = $secret_key"
+                echo "region = ${region:-us-east-1}"
+                echo "endpoint = $endpoint"
+                echo
+            } >> ~/.config/rclone/rclone.conf
+        fi
+    done
+    echo 'write rclone.conf'
+}
+
+# Function to write mgc auth
+write_mgc_configs() {
+    # Process each remote in the YAML file
+    local config="$1"
+    echo "$config" | yq eval '.remotes | keys' - | while IFS= read -r remote; do
+        remote=$(echo "$remote" | sed 's/^- //')  # Remove prefix from list
+        remote_folder="$HOME/.config/mgc/$remote"
+        create_paths "$remote_folder"
+
+        access_key=$(echo "$config" | yq eval ".remotes.\"$remote\".access_key" -)
+        secret_key=$(echo "$config" | yq eval ".remotes.\"$remote\".secret_key" -)
+        region=$(echo "$config" | yq eval ".remotes.\"$remote\".region" -)
+
+        echo "access_key_id: $access_key" > "${remote_folder}/auth.yaml"
+        echo "secret_access_key: $secret_key" >> "${remote_folder}/auth.yaml"
+
+        echo "region: ${region:-us-east-1}" > "${remote_folder}/cli.yaml"
+    done
+
+    echo 'write mgc auth'
+}
+
+# Function to configure a new profile
+profile_configure() {
+    read -rp "Enter profile name: " profile_name
+    read -rp "Enter access key: " access_key
+    read -rp "Enter secret key: " secret_key
+    read -rp "Enter endpoint: " endpoint
+    read -rp "Enter region (default us-east-1): " region
+    read -rp "Enter host style (default path): " host_style
+
+    # Use "us-east-1" with default region if not send
+    region=${region:-us-east-1}
+    host_style=${host_style:-host}
+    # Append new remote to file config.yaml
+    yq eval -i ".remotes.\"$profile_name\" = {\"access_key\": \"$access_key\", \"secret_key\": \"$secret_key\", \"endpoint\": \"$endpoint\", \"region\": \"$region\", \"host\": \"$host_style\"}" $CONFIG_FILE
+
+    echo "Profile $profile_name added to config.yaml"
+}
+
+# Function to create configs
+create_configs() {
+    # Write aws, rclone and mgc config
+    config=$(yq eval '.' "$CONFIG_FILE")
+    write_aws_config "$config"
+    write_rclone_config "$config"
+    write_mgc_configs "$config"
+}
+
+# Function to list remotes
+list_remotes() {
+    echo "Remotes:"
+    yq eval '.remotes | keys | .[]' "$CONFIG_FILE"
+}
+
+# Function to delete a profile of config.yaml
+profile_delete() {
+    profile_name="$1"
+    # Delete the entry on the config.yaml
+    yq eval -i "del(.remotes.\"$profile_name\")" "$CONFIG_FILE"
+
+    echo "Profile $profile_name deleted from $CONFIG_FILE"
+
+    # Re-write the configs for AWS, Rclone and MGC
+    config=$(yq eval '.' "$CONFIG_FILE")
+    write_aws_config "$config"
+    write_rclone_config "$config"
+    write_mgc_configs "$config"
+}
+
+# Function to change a profile
+profile_edit() {
+    profile_name="$1"
+    if [ -z "$profile_name" ]; then
+        echo "Error: No profile name provided"
+        exit 1
+    fi
+
+    # Check if profile exists
+    if ! yq eval ".remotes | has(\"$profile_name\")" "$CONFIG_FILE"; then
+        echo "Error: The profile '$profile_name' not exists"
+        exit 1
+    fi
+
+    # Catch the new configs of profile
+    read -rp "Enter new access key: " access_key
+    read -rp "Enter new secret key: " secret_key
+    read -rp "Enter new endpoint: " endpoint
+    read -rp "Enter region (default us-east-1): " region
+    read -rp "Enter host style (default path): " host_style
+
+    # Use "us-east-1" with default region if not send
+    region=${region:-us-east-1}
+    host_style=${host_style:-host}
+    # Append new remote to file config.yaml
+    yq eval -i ".remotes.\"$profile_name\" = {\"access_key\": \"$access_key\", \"secret_key\": \"$secret_key\", \"endpoint\": \"$endpoint\", \"region\": \"$region\", \"host\": \"$host_style\"}" $CONFIG_FILE
+
+    echo "Profile $profile_name edited in $CONFIG_FILE"
+
+    # Re-write the configs for AWS, Rclone and MGC
+    config=$(yq eval '.' "$CONFIG_FILE")
+    write_aws_config "$config"
+    write_rclone_config "$config"
+}
+
+# Function to show a remote details
+show_remote_details() {
+    profile_name="$1"
+    if [ -z "$profile_name" ]; then
+        echo "Error: No profile name provided"
+        exit 1
+    fi
+
+    # Verificar se o perfil existe
+    if ! yq eval ".remotes | has(\"$profile_name\")" "$CONFIG_FILE"; then
+        echo "Error: The profile '$profile_name' not exists"
+        exit 1
+    fi
+
+    echo "Remote details to '$profile_name':"
+    yq eval ".remotes.\"$profile_name\"" "$CONFIG_FILE"
+}
+
+# Check if config.yaml exists, and create if necessary
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "config.yaml not found, creating with basic structure..."
+    mkdir -p "$CONFIG_DIR"
+    echo "remotes: {}" > "$CONFIG_FILE"
+fi
+
+# Manual of use on script
+print_usage() {
+    echo "Usage: s3config <command>"
+    echo
+    echo "Commands:"
+    echo "  configure               Configure a new s3 profile"
+    echo "  set <profile-name>      Set the s3 profile to use"
+    echo "  create                  Write AWS,Rclone and MGC configurations"
+    echo "  delete <profile-name>   Delete a profile"
+    echo "  list                    List remotes"
+    echo "  show <profile-name>     List remote details"
+}
+
+# Check which command was selected 
+case "$1" in
+    "configure")
+        profile_configure
+        # Recarregar a configuração após adicionar o novo perfil
+        create_configs
+        ;;
+    "set")
+        if [ -n "$2" ]; then
+            export AWS_PROFILE="$2"
+            echo "Profile aws set to $2"
+            echo "mgc profile set-current $2"
+        else
+            echo "Error: No profile name provided"
+            exit 1
+        fi
+        ;;
+    "create")
+        create_configs
+        ;;
+    "delete")
+        if [ -n "$2" ]; then
+            profile_delete "$2"
+        else
+            echo "Error: No profile name provided"
+            exit 1
+        fi
+        ;;
+    "list")
+        list_remotes
+        ;;
+    "edit")
+        show_remote_details "$2"
+        profile_edit "$2"
+        ;;
+    "show")
+        show_remote_details "$2"
+        ;;
+        *)
+        print_usage
+        exit 1
+        ;;
+esac
