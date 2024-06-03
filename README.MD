@@ -11,39 +11,34 @@ Certifique-se de ter as seguintes dependências instaladas em sua máquina:
 
 ## Instalação
 
-1. Clone este repositório:
+Instale o deb com o comando:
 
-    ```sh
-    git clone https://github.com/marmotitude/s3-template.git
-    ```
-
-2. Navegue até o diretório do projeto:
-
-    ```sh
-    cd s3-template
-    ```
-
-3. Instale as dependências:
-
-    ```sh
-    # Para Linux
-    sudo wget https://github.com/mikefarah/yq/releases/download/v4.31.1/yq_linux_amd64 -O /usr/local/bin/yq
-    sudo chmod +x /usr/local/bin/yq
-    ```
+```sh
+sudo dpkg -i s3config_*.deb
+```
 
 ## Uso
 
-Crie um arquivo com o nome `config.yaml` e configure conforme o `example.config.yaml`.
+Comandos disponíveis:
 
-Para gerar os arquivos de configuração, execute o script `create-profiles.sh`:
+```
+Usage: s3config <command>
 
-```sh
-./create-profiles.sh
+Commands:
+  configure               Configure a new s3 profile
+  set <profile-name>      Set the s3 profile to use
+  create                  Write AWS,Rclone and MGC configurations
+  delete <profile-name>   Delete a profile
+  list                    List remotes
+  show <profile-name>     List remote details
 ```
 
-Este script irá gerar os documentos de configuração para os clientes AWS S3, Rclone e MGC.
+Peculiaridade, para o comando "set" precisa rodar a cli com source, exemplo:
 
-## Plus
+```
+source s3config set <profile-name>
+```
+ou
 
 adicione as linhas do .bashrc.config em seu bashrc e defina o profile da aws-cli e mgc com:
 
