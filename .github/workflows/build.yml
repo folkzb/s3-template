@@ -1,0 +1,50 @@
+name: Build and Release Debian Package
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v3
+
+      - name: Set up build environment
+        run: sudo apt-get update && sudo apt-get install -y dpkg-dev
+
+      - name: Build the project
+        run: |
+          mkdir -p s3config/DEBIAN
+          echo "Package: s3config" > s3config/DEBIAN/control
+          echo "Version: ${{ github.ref_name }}" >> s3config/DEBIAN/control
+          echo "Section: base" >> s3config/DEBIAN/control
+          echo "Priority: optional" >> s3config/DEBIAN/control
+          echo "Architecture: all" >> s3config/DEBIAN/control
+          echo "Maintainer: Bruno Fernandes <bruno.fernandes1996@hotmail.com>" >> s3config/DEBIAN/control
+          echo "Description: S3 Config is a software to create config files to AWS, Rclone and MGC" >> s3config/DEBIAN/control
+          
+          dpkg-deb --build s3config
+        shell: bash
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./s3config.deb
+          asset_name: s3config.deb
+          asset_content_type: application/x-debian-package
