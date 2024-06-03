@@ -1,6 +1,6 @@
 # Gerador de Documentos de Configuração para Clientes AWS S3, Rclone e MGC
 
-Este projeto consiste em um gerador de documentos de configuração para clientes AWS S3, Rclone e MGC. Ele utiliza bash e yq como dependência.
+Este projeto consiste em uma CLI que gera documentos de configuração para clientes AWS S3, Rclone e MGC, Mantendo os mesmos profiles nos 3 provedores. Ele utiliza bash e yq como dependência.
 
 ## Pré-requisitos
 
