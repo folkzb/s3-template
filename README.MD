@@ -14,7 +14,7 @@ Certifique-se de ter as seguintes dependências instaladas em sua máquina:
 Instale o deb com o comando:
 
 ```sh
-sudo dpkg -i s3config_*.deb
+sudo dpkg -i s3config.deb
 ```
 
 ## Uso
