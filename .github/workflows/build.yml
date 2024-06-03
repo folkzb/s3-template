@@ -1,10 +1,10 @@
-name: Build and Release Debian Package
+name: Build and Upload Debian Package
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version'
+        description: 'Package version'
         required: true
         default: '0.0.1'
 
@@ -33,23 +33,8 @@ jobs:
           dpkg-deb --build s3config
         shell: bash
 
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Debian package as artifact
+        uses: actions/upload-artifact@v3
         with:
-          tag_name: v${{ github.event.inputs.version }}
-          name: Release v${{ github.event.inputs.version }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./s3config.deb
-          asset_name: s3config.deb
-          asset_content_type: application/x-debian-package
+          name: s3config.deb
+          path: s3config.deb
