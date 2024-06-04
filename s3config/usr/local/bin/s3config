@@ -234,7 +234,8 @@ case "$1" in
         if [ -n "$2" ]; then
             export AWS_PROFILE="$2"
             echo "Profile aws set to $2"
-            echo "mgc profile set-current $2"
+            mgc profile set-current "$2"
+            echo "profile mgc set to $2"
         else
             echo "Error: No profile name provided"
             exit 1
