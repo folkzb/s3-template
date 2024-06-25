@@ -113,7 +113,7 @@ profile_configure() {
 
     # Use "us-east-1" with default region if not send
     region=${region:-us-east-1}
-    host_style=${host_style:-host}
+    host_style=${host_style:-path}
     # Append new remote to file config.yaml
     yq eval -i ".remotes.\"$profile_name\" = {\"access_key\": \"$access_key\", \"secret_key\": \"$secret_key\", \"endpoint\": \"$endpoint\", \"region\": \"$region\", \"host\": \"$host_style\"}" $CONFIG_FILE
 
@@ -164,16 +164,20 @@ profile_edit() {
         exit 1
     fi
 
-    # Catch the new configs of profile
-    read -rp "Enter new access key: " access_key
-    read -rp "Enter new secret key: " secret_key
-    read -rp "Enter new endpoint: " endpoint
-    read -rp "Enter region (default us-east-1): " region
-    read -rp "Enter host style (default path): " host_style
+    # Get the current values
+    access_key=$(yq eval ".remotes.\"$profile_name\".access_key" "$CONFIG_FILE")
+    secret_key=$(yq eval ".remotes.\"$profile_name\".secret_key" "$CONFIG_FILE")
+    endpoint=$(yq eval ".remotes.\"$profile_name\".endpoint" "$CONFIG_FILE")
+    region=$(yq eval ".remotes.\"$profile_name\".region" "$CONFIG_FILE")
+    host_style=$(yq eval ".remotes.\"$profile_name\".host" "$CONFIG_FILE")
 
-    # Use "us-east-1" with default region if not send
-    region=${region:-us-east-1}
-    host_style=${host_style:-host}
+    # Prompt for new values, using current values as defaults
+    read -rp "Enter new access key: " -e -i "$access_key" access_key
+    read -rp "Enter new secret key: " -e -i "$secret_key" secret_key
+    read -rp "Enter new endpoint: " -e -i "$endpoint" endpoint
+    read -rp "Enter region (default us-east-1, current: $region): " -e -i "${region:-us-east-1}" region
+    read -rp "Enter host style (default path, current: $host_style): " -e -i "${host_style:-path}" host_style
+
     # Append new remote to file config.yaml
     yq eval -i ".remotes.\"$profile_name\" = {\"access_key\": \"$access_key\", \"secret_key\": \"$secret_key\", \"endpoint\": \"$endpoint\", \"region\": \"$region\", \"host\": \"$host_style\"}" $CONFIG_FILE
 
@@ -183,6 +187,7 @@ profile_edit() {
     config=$(yq eval '.' "$CONFIG_FILE")
     write_aws_config "$config"
     write_rclone_config "$config"
+    write_mgc_configs "$config"
 }
 
 # Function to show a remote details
@@ -256,8 +261,12 @@ case "$1" in
         list_remotes
         ;;
     "edit")
-        show_remote_details "$2"
-        profile_edit "$2"
+        if [ -n "$2" ]; then
+            profile_edit "$2"
+        else
+            echo "Error: No profile name provided"
+            exit 1
+        fi
         ;;
     "show")
         show_remote_details "$2"
