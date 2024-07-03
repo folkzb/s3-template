@@ -11,10 +11,10 @@ Certifique-se de ter as seguintes dependências instaladas em sua máquina:
 
 ## Instalação
 
-Instale o deb com o comando:
+Clone o repositório localmente e rode o comando:
 
 ```sh
-sudo dpkg -i s3config.deb
+sudo cp s3config /usr/local/bin/s3config
 ```
 
 ## Uso
@@ -41,6 +41,13 @@ source s3config set <profile-name>
 ou
 
 adicione as linhas do .bashrc.config em seu bashrc e defina o profile da aws-cli e mgc com:
+
+```sh
+profile() {
+    export AWS_PROFILE="$1"
+    mgc profile set-current "$1"
+}
+```
 
 ```
 profile <profile-name>
