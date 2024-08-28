@@ -45,7 +45,7 @@ adicione as linhas do .bashrc.config em seu bashrc e defina o profile da aws-cli
 ```sh
 profile() {
     export AWS_PROFILE="$1"
-    mgc profile set-current "$1"
+    mgc workspace set "$1"
 }
 ```
 
