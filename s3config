@@ -137,6 +137,8 @@ list_remotes() {
 
 # Function to install deps
 install_deps() {
+    echo "installing unzip..."
+    sudo apt-get install unzip
     echo "installing yq..."
     # Verifica e instala o yq 
     sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq &&\
