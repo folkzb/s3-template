@@ -135,6 +135,30 @@ list_remotes() {
     yq eval '.remotes | keys | .[]' "$CONFIG_FILE"
 }
 
+# Function to install deps
+install_deps() {
+    echo "installing yq..."
+    # Verifica e instala o yq 
+    sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq &&\
+    sudo chmod +x /usr/bin/yq
+
+    # Verifica privilégios de sudo e instala o rclone
+    echo "installing rclone..."
+    # 
+    curl https://rclone.org/install.sh | bash
+
+    # Verifica privilégios de sudo e instala o MGC (Multi-Cloud Gateway)
+    echo "installing mgc..."
+    # sudo -v
+    curl https://raw.githubusercontent.com/marmotitude/mgc-installer/main/install.sh | bash
+
+    # Baixa, descompacta e instala o AWS CLI v2
+    echo "installing aws..."
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    unzip awscliv2.zip
+    sudo ./aws/install
+}
+
 # Function to delete a profile of config.yaml
 profile_delete() {
     profile_name="$1"
@@ -212,7 +236,7 @@ show_remote_details() {
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "config.yaml not found, creating with basic structure..."
     mkdir -p "$CONFIG_DIR"
-    echo "remotes: {}" > "$CONFIG_FILE"
+    echo "remotes:" > "$CONFIG_FILE"
 fi
 
 # Manual of use on script
@@ -226,6 +250,7 @@ print_usage() {
     echo "  delete <profile-name>   Delete a profile"
     echo "  list                    List remotes"
     echo "  show <profile-name>     List remote details"
+    echo "  install                 Install dependency YQ and clients aws/mgc/rclone in the latest version"
 }
 
 # Check which command was selected 
@@ -270,6 +295,9 @@ case "$1" in
         ;;
     "show")
         show_remote_details "$2"
+        ;;
+    "install")
+        install_deps
         ;;
         *)
         print_usage

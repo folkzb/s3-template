@@ -13,11 +13,20 @@ Certifique-se de ter as seguintes dependências instaladas em sua máquina:
 
 Clone o repositório localmente e rode o comando:
 
+
+
 ```sh
 sudo cp s3config /usr/local/bin/s3config
 ```
 
 ## Uso
+
+Para instalar as dependencias use:
+
+```
+s3config install
+```
+
 
 Comandos disponíveis:
 
@@ -31,6 +40,7 @@ Commands:
   delete <profile-name>   Delete a profile
   list                    List remotes
   show <profile-name>     List remote details
+  install                 Install dependecy YQ and clients aws/mgc/rclone in the latest version
 ```
 
 Peculiaridade, para o comando "set" precisa rodar a cli com source, exemplo:
