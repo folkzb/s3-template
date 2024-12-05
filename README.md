@@ -11,12 +11,12 @@ Certifique-se de ter as seguintes dependências instaladas em sua máquina:
 
 ## Instalação
 
-Clone o repositório localmente e rode o comando:
+Rode o comando abaixo para instalar seu s3config:
 
 
 
 ```sh
-sudo cp s3config /usr/local/bin/s3config
+sudo -v ; curl https://raw.githubusercontent.com/marmotitude/s3-template/main/install.sh | sudo bash
 ```
 
 ## Uso
