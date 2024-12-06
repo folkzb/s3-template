@@ -152,7 +152,7 @@ install_deps() {
     # Verifica privilégios de sudo e instala o MGC (Multi-Cloud Gateway)
     echo "installing mgc..."
     # sudo -v
-    curl https://raw.githubusercontent.com/marmotitude/mgc-installer/main/install.sh | bash
+    sudo -v ; curl https://raw.githubusercontent.com/marmotitude/mgc-installer/main/install.sh | sudo bash
 
     # Baixa, descompacta e instala o AWS CLI v2
     echo "installing aws..."
