@@ -24,6 +24,8 @@ write_aws_config() {
             secret_key=$(echo "$config" | yq eval ".remotes.\"$remote\".secret_key" -)
             region=$(echo "$config" | yq eval ".remotes.\"$remote\".region" -)
             endpoint=$(echo "$config" | yq eval ".remotes.\"$remote\".endpoint" -)
+            request_checksum_calculation=$(echo "$config" | yq eval ".remotes.\"$remote\".request_checksum_calculation" -)
+            response_checksum_validation=$(echo "$config" | yq eval ".remotes.\"$remote\".response_checksum_validation" -)
             host=$(echo "$config" | yq eval ".remotes.\"$remote\".host" -)
 
             # Write config
@@ -31,6 +33,15 @@ write_aws_config() {
                 echo "[profile $remote]"
                 echo "endpoint_url = $endpoint"
                 echo "region = ${region:-us-east-1}"
+                # Only write `request_checksum_calculation` if it's not null or missing
+                if [ "$request_checksum_calculation" != "null" ] && [ -n "$request_checksum_calculation" ]; then
+                    echo "request_checksum_calculation = $request_checksum_calculation"
+                fi
+
+                # Only write `response_checksum_validation` if it's not null or missing
+                if [ "$response_checksum_validation" != "null" ] && [ -n "$response_checksum_validation" ]; then
+                    echo "response_checksum_validation = $response_checksum_validation"
+                fi
                 echo "s3 ="
                 echo "    addressing_style = ${host:-path}"
                 echo
@@ -109,13 +120,15 @@ profile_configure() {
     read -rp "Enter secret key: " secret_key
     read -rp "Enter endpoint: " endpoint
     read -rp "Enter region (default us-east-1): " region
+    read -rp "Enter request_checksum_calculation (default WHEN_REQUIRED): " request_checksum_calculation
+    read -rp "Enter response_checksum_validation (default WHEN_REQUIRED): " response_checksum_validation
     read -rp "Enter host style (default path): " host_style
 
     # Use "us-east-1" with default region if not send
     region=${region:-us-east-1}
     host_style=${host_style:-path}
     # Append new remote to file config.yaml
-    yq eval -i ".remotes.\"$profile_name\" = {\"access_key\": \"$access_key\", \"secret_key\": \"$secret_key\", \"endpoint\": \"$endpoint\", \"region\": \"$region\", \"host\": \"$host_style\"}" $CONFIG_FILE
+    yq eval -i ".remotes.\"$profile_name\" = {\"access_key\": \"$access_key\", \"secret_key\": \"$secret_key\", \"endpoint\": \"$endpoint\", \"region\": \"$region\", \"request_checksum_calculation\": \"$request_checksum_calculation\", \"response_checksum_validation\": \"$response_checksum_validation\", \"host\": \"$host_style\"}" $CONFIG_FILE
 
     echo "Profile $profile_name added to config.yaml"
 }
@@ -195,6 +208,8 @@ profile_edit() {
     secret_key=$(yq eval ".remotes.\"$profile_name\".secret_key" "$CONFIG_FILE")
     endpoint=$(yq eval ".remotes.\"$profile_name\".endpoint" "$CONFIG_FILE")
     region=$(yq eval ".remotes.\"$profile_name\".region" "$CONFIG_FILE")
+    request_checksum_calculation=$(yq eval ".remotes.\"$profile_name\".request_checksum_calculation" "$CONFIG_FILE")
+    response_checksum_validation=$(yq eval ".remotes.\"$profile_name\".response_checksum_validation" "$CONFIG_FILE")
     host_style=$(yq eval ".remotes.\"$profile_name\".host" "$CONFIG_FILE")
 
     # Prompt for new values, using current values as defaults
@@ -202,6 +217,8 @@ profile_edit() {
     read -rp "Enter new secret key: " -e -i "$secret_key" secret_key
     read -rp "Enter new endpoint: " -e -i "$endpoint" endpoint
     read -rp "Enter region (default us-east-1, current: $region): " -e -i "${region:-us-east-1}" region
+    read -rp "Enter request_checksum_calculation (default WHEN_REQUIRED, current: $request_checksum_calculation): " -e -i "${request_checksum_calculation:-WHEN_REQUIRED}" request_checksum_calculation
+    read -rp "Enter response_checksum_validation (default WHEN_REQUIRED, current: $response_checksum_validation): " -e -i "${response_checksum_validation:-WHEN_REQUIRED}" response_checksum_validation
     read -rp "Enter host style (default path, current: $host_style): " -e -i "${host_style:-path}" host_style
 
     # Append new remote to file config.yaml
