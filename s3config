@@ -103,11 +103,13 @@ write_mgc_configs() {
         access_key=$(echo "$config" | yq eval ".remotes.\"$remote\".access_key" -)
         secret_key=$(echo "$config" | yq eval ".remotes.\"$remote\".secret_key" -)
         region=$(echo "$config" | yq eval ".remotes.\"$remote\".region" -)
+        endpoint=$(echo "$config" | yq eval ".remotes.\"$remote\".endpoint" -)
 
         echo "access_key_id: $access_key" > "${remote_folder}/auth.yaml"
         echo "secret_access_key: $secret_key" >> "${remote_folder}/auth.yaml"
 
         echo "region: ${region:-us-east-1}" > "${remote_folder}/cli.yaml"
+        echo "serverurl: $endpoint" > "${remote_folder}/cli.yaml"
     done
 
     echo 'write mgc auth'
